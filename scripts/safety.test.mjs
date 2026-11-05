@@ -115,7 +115,7 @@ await test('expensive-lot screenshot phrases map to explicit transaction ranking
     "Bozordagi top 5 eng qimmat lot lar haqida ma'lumot ber",
   ]) {
     assert.deepEqual(await parser.parse(question), {
-      kind: 'top_deals', limit: 5, convertToUzs: true,
+      kind: 'top_deals', limit: 5, convertToUzs: true, order: 'desc',
       period: { from: '2022-01-03', to: '2026-10-30' },
     });
   }
@@ -129,5 +129,22 @@ await test('external offer IDs never become dataset lookup IDs', async () => {
     assert.deepEqual(await parser.parse(`https://uzex.uz/trade/offer/${id}`), {
       kind: 'limitation', reason: 'external_link',
     });
+  }
+});
+
+
+await test('singular and cheapest transaction requests preserve limit and direction', async () => {
+  const parser = new QuestionParser();
+  for (const [question, limit, order] of [
+    ["Top 3 eng arzon lotlar haqida ma'lumot ber", 3, 'asc'],
+    ['Eng qimmat bitim haqida ma’lumot ber', 1, 'desc'],
+    ['2025 yil eng qimmat bitta bitimni ko‘rsat', 1, 'desc'],
+    ['Eng arzon lot haqida ma’lumot ber', 1, 'asc'],
+    ['Top 5 eng qimmat lotlar haqida ma’lumot ber', 5, 'desc'],
+  ]) {
+    const result = await parser.parse(question);
+    assert.equal(result.kind, 'top_deals', question);
+    assert.equal(result.limit, limit, question);
+    assert.equal(result.order, order, question);
   }
 });

@@ -73,10 +73,11 @@ export class Analytics implements OnModuleDestroy {
         if (missing.getRows()[0]?.[0] !== 0n) throw new Error('Missing exchange rates');
       }
       if (query.kind === 'top_deals') {
+        const direction = query.order === 'asc' ? 'ASC' : 'DESC';
         const reader = await connection.runAndReadAll(`
           WITH ranked AS (
             SELECT d.deal_id AS entity, d.product_name AS name, ${currency} AS currency,
-              ${amount} AS total, row_number() OVER (ORDER BY ${amount} DESC, d.deal_id) AS rank
+              ${amount} AS total, row_number() OVER (ORDER BY ${amount} ${direction}, d.deal_id) AS rank
             FROM ${from} WHERE ${where} AND d.deal_id IS NOT NULL
           )
           SELECT entity, name, currency, CAST(total AS VARCHAR) AS amount,

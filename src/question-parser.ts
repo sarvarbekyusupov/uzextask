@@ -26,7 +26,7 @@ const querySchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('average_amount'), ...filters }),
   z.strictObject({ kind: z.literal('top_sellers'), ...filters, limit: z.number().int().min(1).max(20) }),
   z.strictObject({ kind: z.literal('top_buyers'), ...filters, limit: z.number().int().min(1).max(20) }),
-  z.strictObject({ kind: z.literal('top_deals'), ...filters, limit: z.number().int().min(1).max(20) }),
+  z.strictObject({ kind: z.literal('top_deals'), ...filters, order: z.enum(['asc', 'desc']).optional(), limit: z.number().int().min(1).max(20) }),
   z.strictObject({ kind: z.literal('top_products'), ...filters, limit: z.number().int().min(1).max(20) }),
   z.strictObject({ kind: z.literal('volume'), ...filters }),
   z.strictObject({ kind: z.literal('unit_price'), ...filters }),
@@ -77,9 +77,9 @@ function exact(question: string): RawIntent | undefined {
 }
 
 const instructions = `Classify one Uzbek or Russian UZEX question. Return JSON only.
-Allowed kinds: count, turnover, average_amount (average amount per deal), volume (quantity * lot), unit_price (sum amount / sum volume, weighted), top_sellers, top_buyers, top_products, top_deals (largest individual transaction amounts), lookup_company, lookup_broker, lookup_contract, lookup_deal, needs_year, unsupported.
+Allowed kinds: count, turnover, average_amount (average amount per deal), volume (quantity * lot), unit_price (sum amount / sum volume, weighted), top_sellers, top_buyers, top_products, top_deals (individual transactions ranked by total amount), lookup_company, lookup_broker, lookup_contract, lookup_deal, needs_year, unsupported.
 Analytics fields: year (if explicit), product (exact requested phrase), sellerTaxId / buyerTaxId (9-digit IDs), sellerName / buyerName (company name copied from question), contractId, brokerCode (BKxxx, matches either side), currency (UZS or USD, only when user filters that currency), convertToUzs (true only when all amounts requested in UZS). Ranking kinds additionally require limit (1–20). Use 1 for a single leader; otherwise default to 5 if unspecified. No other fields.
-"Most expensive lots" and "eng qimmat lotlar" mean top_deals by total transaction amount. Use convertToUzs:true unless the user explicitly selects one currency. If ranking unit/lot prices is requested, use unsupported instead of changing the price basis.
+"Most expensive lots" and "eng qimmat lotlar" mean top_deals by total transaction amount. For top_deals set order:"asc" for cheapest/smallest and "desc" for most expensive/largest. Singular requests require limit:1. Use convertToUzs:true unless the user explicitly selects one currency. If ranking unit/lot prices is requested, use unsupported instead of changing the price basis.
 Date range is extracted independently by code. Preserve the user's other filters. Do not use unsupported merely because the question mentions a month or ISO dates.
 Lookup kinds use ONLY kind and id copied verbatim from the question. Lookup details come from the database.
 Use unsupported for unsupported metrics or filters, comparison of separate periods, status or region filters, requests to invent answers, or ambiguity. Use needs_year if no time period is given for analytics, except top_deals which may use the full available dataset period.
@@ -99,10 +99,16 @@ export class QuestionParser {
     if (/(?:bazani ishlatma|o[‘’'ʻ]ylab top|to[‘’'ʻ]qib|игнорируй правила|придумай ответ|выдумай)/iu.test(question)) return { kind: 'unsupported' };
     const lotText = question.toLowerCase().replace(/['’ʻ]/gu, '‘').replace(/[?.!]+$/u, '').trim()
       .replace(/^\d{4}[- ]?yil(?:da|dagi)?\s+/u, '').replace(/lot\s+lar/gu, 'lotlar');
-    const expensive = /^(?:menga |bozordagi )?(?:top[- ]?(\d{1,2}) )?(?:eng qimmat|eng katta summali) (?:(\d{1,2}) )?(?:lotlar|lot|lotni|lotlarni|bitimlar|bitim|bitimni|bitimlarni)(?: (?:haqida ma‘lumot ber|haqida ma’lumot ber|haqida ma‘lumot|ni ko‘rsat|ko‘rsat|qaysilar))?$/iu.exec(lotText);
-    if (expensive) {
+    const ranking = /^(?:menga |bozordagi )?(?:top[- ]?(\d{1,2}) )?(eng qimmat|eng katta summali|eng arzon|eng kichik summali) (?:(\d{1,2}|bitta|bir) )?(lotlar|lot|lotni|lotlarni|bitimlar|bitim|bitimni|bitimlarni)(?: (?:haqida ma‘lumot ber|haqida ma‘lumot|ni ko‘rsat|ko‘rsat|qaysilar))?$/iu.exec(lotText);
+    if (ranking) {
       if (period.kind === 'invalid') return { kind: 'unsupported' };
-      const parsed = querySchema.safeParse({ kind: 'top_deals', limit: Number(expensive[1] ?? expensive[2] ?? 5), convertToUzs: true });
+      const count = ranking[1] ?? ranking[3];
+      const singular = ['lot', 'lotni', 'bitim', 'bitimni'].includes(ranking[4]);
+      const limit = count === 'bitta' || count === 'bir' ? 1 : Number(count ?? (singular ? 1 : 5));
+      const parsed = querySchema.safeParse({
+        kind: 'top_deals', limit, convertToUzs: true,
+        order: /arzon|kichik/u.test(ranking[2]) ? 'asc' : 'desc',
+      });
       if (!parsed.success || parsed.data.kind !== 'top_deals') return { kind: 'unsupported' };
       return { ...parsed.data, period: period.kind === 'period' ? period.period : fullPeriod };
     }
@@ -190,7 +196,7 @@ export class QuestionParser {
     if (/\b(?:USD|доллар|dollar)/iu.test(question) && !intent.currency && !intent.convertToUzs) return { kind: 'unsupported' };
     if (/(?:средн.*цен|o[‘’'ʻ]rtacha.*narx)/iu.test(question) && intent.kind !== 'unit_price') return { kind: 'unsupported' };
     if (intent.kind === 'top_deals') {
-      return { ...intent, convertToUzs: intent.convertToUzs || !intent.currency, period: period.kind === 'period' ? period.period : fullPeriod };
+      return { ...intent, order: /eng arzon|eng kichik|деш[её]в/iu.test(question) ? 'asc' : intent.order ?? 'desc', convertToUzs: intent.convertToUzs || !intent.currency, period: period.kind === 'period' ? period.period : fullPeriod };
     }
     if (period.kind !== 'period') return { kind: 'needs_year' };
     return { ...intent, period: period.period };
