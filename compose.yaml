@@ -1,0 +1,27 @@
+services:
+  api:
+    image: uzex-agent
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      UZEX_DB: data/uzex.duckdb
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  telegram:
+    image: uzex-agent
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      UZEX_QUESTIONS_URL: http://api:3000/questions
+    command: ["node", "scripts/telegram.mjs"]
+    depends_on:
+      api:
+        condition: service_healthy

@@ -1,0 +1,348 @@
+[
+  {
+    "question": "2024-yilda sement bo‘yicha top 3 ta sotuvchi kim?",
+    "kind": "answer",
+    "expected": [
+      "(984713635) · 203360979393.00000000 UZS",
+      "(905705860) · 146415424439.00000000 UZS",
+      "(942568436) · 132141777571.00000000 UZS"
+    ]
+  },
+  {
+    "question": "Назови общее количество зарегистрированных сделок за 2025 год",
+    "kind": "answer",
+    "expected": [
+      "115763"
+    ]
+  },
+  {
+    "question": "Назови трёх лидеров по обороту цемента за 2023 год",
+    "kind": "answer",
+    "expected": [
+      "(984713635) · 168763432510.00000000 UZS",
+      "(966688412) · 116831410819.00000000 UZS",
+      "(937792532) · 112744562263.00000000 UZS"
+    ]
+  },
+  {
+    "question": "Назови общее количество зарегистрированных сделок за 2022 год",
+    "kind": "answer",
+    "expected": [
+      "84299"
+    ]
+  },
+  {
+    "question": "2025-yil Toshkentda havo harorati qancha edi?",
+    "kind": "unsupported",
+    "expected": []
+  },
+  {
+    "question": "Назови общее количество зарегистрированных сделок за 2024 год",
+    "kind": "answer",
+    "expected": [
+      "106647"
+    ]
+  },
+  {
+    "question": "Какой общий оборот в 2023 году?",
+    "kind": "answer",
+    "expected": [
+      "34261192821432.37000000 UZS",
+      "207151571.61000000 USD"
+    ]
+  },
+  {
+    "question": "Назови общее количество зарегистрированных сделок за 2023 год",
+    "kind": "answer",
+    "expected": [
+      "93985"
+    ]
+  },
+  {
+    "question": "2023-yilda nechta bitim bo‘lgan?",
+    "kind": "answer",
+    "expected": [
+      "93985"
+    ]
+  },
+  {
+    "question": "Назови трёх лидеров по обороту цемента за 2025 год",
+    "kind": "answer",
+    "expected": [
+      "(984713635) · 157281883132.00000000 UZS",
+      "(905705860) · 146105888777.00000000 UZS",
+      "(987880733) · 136183160233.00000000 UZS"
+    ]
+  },
+  {
+    "question": "2026-yilda sement bo‘yicha top 3 ta sotuvchi kim?",
+    "kind": "answer",
+    "expected": [
+      "(992007009) · 272245884506.00000000 UZS",
+      "(987880733) · 170513932394.00000000 UZS",
+      "(995604390) · 135404533710.00000000 UZS"
+    ]
+  },
+  {
+    "question": "2026-yilda nechta bitim bo‘lgan?",
+    "kind": "answer",
+    "expected": [
+      "99306"
+    ]
+  },
+  {
+    "question": "2025-yil bo‘yicha jami bitimlar summasini valyutalar kesimida ayt",
+    "kind": "answer",
+    "expected": [
+      "53235811373733.10000000 UZS",
+      "220524617.85000000 USD"
+    ]
+  },
+  {
+    "question": "2022-yilda sement bo‘yicha top 3 ta sotuvchi kim?",
+    "kind": "answer",
+    "expected": [
+      "(984967317) · 275563518982.00000000 UZS",
+      "(962584062) · 178981679685.00000000 UZS",
+      "(937792532) · 93992750121.00000000 UZS"
+    ]
+  },
+  {
+    "question": "2031-yilda nechta bitim bo‘lgan?",
+    "kind": "outside_coverage",
+    "expected": []
+  },
+  {
+    "question": "Сколько сделок было в 2020 году?",
+    "kind": "outside_coverage",
+    "expected": []
+  },
+  {
+    "question": "Какой общий оборот в 2025 году?",
+    "kind": "answer",
+    "expected": [
+      "53235811373733.10000000 UZS",
+      "220524617.85000000 USD"
+    ]
+  },
+  {
+    "question": "Какой общий оборот?",
+    "kind": "needs_year",
+    "expected": []
+  },
+  {
+    "question": "Какой общий оборот в 2022 году?",
+    "kind": "answer",
+    "expected": [
+      "27317724027136.38000000 UZS",
+      "236554900.60000000 USD"
+    ]
+  },
+  {
+    "question": "Назови общее количество зарегистрированных сделок за 2026 год",
+    "kind": "answer",
+    "expected": [
+      "99306"
+    ]
+  },
+  {
+    "question": "2024-yilda nechta bitim bo‘lgan?",
+    "kind": "answer",
+    "expected": [
+      "106647"
+    ]
+  },
+  {
+    "question": "2022-yilda nechta bitim bo‘lgan?",
+    "kind": "answer",
+    "expected": [
+      "84299"
+    ]
+  },
+  {
+    "question": "2022-yil bo‘yicha jami bitimlar summasini valyutalar kesimida ayt",
+    "kind": "answer",
+    "expected": [
+      "27317724027136.38000000 UZS",
+      "236554900.60000000 USD"
+    ]
+  },
+  {
+    "question": "Какой общий оборот в 2026 году?",
+    "kind": "answer",
+    "expected": [
+      "48740988103598.81000000 UZS",
+      "253972243.98000000 USD"
+    ]
+  },
+  {
+    "question": "Какой общий оборот в 2024 году?",
+    "kind": "answer",
+    "expected": [
+      "43279503660342.31000000 UZS",
+      "219306395.35000000 USD"
+    ]
+  },
+  {
+    "question": "2025-yilda nechta bitim bo‘lgan?",
+    "kind": "answer",
+    "expected": [
+      "115763"
+    ]
+  },
+  {
+    "question": "2023-yil bo‘yicha jami bitimlar summasini valyutalar kesimida ayt",
+    "kind": "answer",
+    "expected": [
+      "34261192821432.37000000 UZS",
+      "207151571.61000000 USD"
+    ]
+  },
+  {
+    "question": "2026-yil bo‘yicha jami bitimlar summasini valyutalar kesimida ayt",
+    "kind": "answer",
+    "expected": [
+      "48740988103598.81000000 UZS",
+      "253972243.98000000 USD"
+    ]
+  },
+  {
+    "question": "2025-yilda xayoliy neon kartoshka bo‘yicha top 3 ta sotuvchi kim?",
+    "kind": "no_data",
+    "expected": []
+  },
+  {
+    "question": "2024-yil bo‘yicha jami bitimlar summasini valyutalar kesimida ayt",
+    "kind": "answer",
+    "expected": [
+      "43279503660342.31000000 UZS",
+      "219306395.35000000 USD"
+    ]
+  },
+  {
+    "question": "2025-yil yanvar oyida nechta bitim bo‘lgan?",
+    "kind": "answer",
+    "expected": [
+      "6196"
+    ]
+  },
+  {
+    "question": "2025-yil yanvar oyida jami aylanma qancha?",
+    "kind": "answer",
+    "expected": [
+      "2535155690784.69"
+    ]
+  },
+  {
+    "question": "2025-02-01 dan 2025-03-15 gacha nechta bitim bo‘lgan?",
+    "kind": "answer",
+    "expected": [
+      "8544"
+    ]
+  },
+  {
+    "question": "2025 yil BK001 broker qatnashgan bitimlar soni qancha?",
+    "kind": "answer",
+    "expected": [
+      "1170"
+    ]
+  },
+  {
+    "question": "2025 yil sotuvchi STIR 984713635 nechta bitim qilgan?",
+    "kind": "answer",
+    "expected": [
+      "1035"
+    ]
+  },
+  {
+    "question": "2025 yil barcha bitimlar aylanmasini USDni kunlik kurs orqali so‘mga o‘girib hisobla",
+    "kind": "answer",
+    "expected": [
+      "55976577480267.0551"
+    ]
+  },
+  {
+    "question": "2025 yilda sement savdo hajmi qancha?",
+    "kind": "answer",
+    "expected": [
+      "1426805"
+    ]
+  },
+  {
+    "question": "2025 yil sementning o‘rtacha birlik narxi qancha?",
+    "kind": "answer",
+    "expected": [
+      "951319.67066277"
+    ]
+  },
+  {
+    "question": "Shartnoma 100008 haqida",
+    "kind": "answer",
+    "expected": [
+      "100008"
+    ]
+  },
+  {
+    "question": "BK001 broker haqida ma’lumot",
+    "kind": "answer",
+    "expected": [
+      "BK001"
+    ]
+  },
+  {
+    "question": "STIR 984713635 kompaniya haqida ma’lumot",
+    "kind": "answer",
+    "expected": [
+      "984713635"
+    ]
+  },
+  {
+    "question": "100001 raqamli bitim haqida ma’lumot",
+    "kind": "answer",
+    "expected": [
+      "100001"
+    ]
+  },
+  {
+    "question": "Сколько сделок заключено в январе 2025 года?",
+    "kind": "answer",
+    "expected": [
+      "6196"
+    ]
+  },
+  {
+    "question": "Сколько сделок заключено с 2025-02-01 по 2025-03-15?",
+    "kind": "answer",
+    "expected": [
+      "8544"
+    ]
+  },
+  {
+    "question": "За 2025 год сколько сделок было у брокера BK001?",
+    "kind": "answer",
+    "expected": [
+      "1170"
+    ]
+  },
+  {
+    "question": "Посчитай за 2025 год весь оборот в сумах, доллары переведи по курсу на дату сделки",
+    "kind": "answer",
+    "expected": [
+      "55976577480267.0551"
+    ]
+  },
+  {
+    "question": "Какова средневзвешенная цена единицы цемента за 2025 год?",
+    "kind": "answer",
+    "expected": [
+      "951319.67066277"
+    ]
+  },
+  {
+    "question": "2025-yilda «FICHO‘R STROY» sotuvchisi nechta bitim tuzgan?",
+    "kind": "answer",
+    "expected": [
+      "1035"
+    ]
+  }
+]

@@ -1,0 +1,12 @@
+**
+!package.json
+!package-lock.json
+!tsconfig.json
+!src/
+!src/**
+!data/
+!data/uzex.duckdb
+!Dockerfile
+
+!scripts/
+!scripts/**

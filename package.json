@@ -1,0 +1,28 @@
+{
+  "name": "uzextask",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --env-file-if-exists=.env dist/main.js",
+    "import": "node scripts/import.mjs",
+    "telegram": "node --env-file-if-exists=.env scripts/telegram.mjs",
+    "verify": "node --env-file-if-exists=.env scripts/verify.mjs",
+    "test": "npm run build && node --test scripts/safety.test.mjs"
+  },
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@duckdb/node-api": "^2.0.0-r.1",
+    "@nestjs/common": "^12.3.3",
+    "@nestjs/core": "^12.3.3",
+    "@nestjs/platform-express": "^12.3.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^5.9.3"
+  },
+  "private": true
+}
