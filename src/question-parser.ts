@@ -39,12 +39,12 @@ const querySchema = z.discriminatedUnion('kind', [
 ]);
 type RawIntent = z.infer<typeof querySchema>;
 export type Query = Exclude<RawIntent, { kind: 'needs_year' | 'unsupported' }> & { period: Period };
-type Intent = Query | { kind: 'needs_year' } | { kind: 'unsupported' } | { kind: 'limitation'; reason: LimitationReason };
+type Intent = Query | { kind: 'needs_year' } | { kind: 'unsupported'; reason?: string } | { kind: 'limitation'; reason: LimitationReason };
 const fullPeriod: Period = { from: '2022-01-03', to: '2026-10-30' };
 const envelope = z.object({ choices: z.array(z.object({ message: z.object({ content: z.string() }) })).min(1) });
 
 function exact(question: string): RawIntent | undefined {
-  const normalized = question.replace(/['’ʻ]/gu, '‘').replace(/[?.!]+$/u, '').trim();
+  const normalized = question.replace(/['’ʻʼ`]/gu, '‘').replace(/[?.!]+$/u, '').trim();
   if (/^(?:jami aylanma qancha|nechta bitim bo[‘’]lgan|какой общий оборот|сколько сделок)$/iu.test(normalized)) {
     return { kind: 'needs_year' };
   }
@@ -77,13 +77,17 @@ function exact(question: string): RawIntent | undefined {
 }
 
 const instructions = `Classify one Uzbek or Russian UZEX question. Return JSON only.
-Allowed kinds: count, turnover, average_amount (average amount per deal), volume (quantity * lot), unit_price (sum amount / sum volume, weighted), top_sellers, top_buyers, top_products, top_deals (individual transactions ranked by total amount), lookup_company, lookup_broker, lookup_contract, lookup_deal, needs_year, unsupported.
-Analytics fields: year (if explicit), product (exact requested phrase), sellerTaxId / buyerTaxId (9-digit IDs), sellerName / buyerName (company name copied from question), contractId, brokerCode (BKxxx, matches either side), currency (UZS or USD, only when user filters that currency), convertToUzs (true only when all amounts requested in UZS). Ranking kinds additionally require limit (1–20). Use 1 for a single leader; otherwise default to 5 if unspecified. No other fields.
-"Most expensive lots" and "eng qimmat lotlar" mean top_deals by total transaction amount. For top_deals set order:"asc" for cheapest/smallest and "desc" for most expensive/largest. Singular requests require limit:1. Use convertToUzs:true unless the user explicitly selects one currency. If ranking unit/lot prices is requested, use unsupported instead of changing the price basis.
+Allowed kinds: count, turnover, average_amount (average amount per deal), volume (physical quantity * lot; savdo hajmi, объём торговли, never monetary turnover), unit_price (sum amount / sum volume, weighted), top_sellers, top_buyers, top_products, top_deals (individual transactions ranked by total amount), lookup_company, lookup_broker, lookup_contract, lookup_deal, needs_year, unsupported.
+Analytics fields: year (if explicit), product (exact requested phrase), sellerTaxId / buyerTaxId (9-digit IDs), sellerName / buyerName (company name copied from question), contractId, brokerCode (BKxxx, matches either side), currency (UZS or USD, only when user filters that currency), convertToUzs (true only when all amounts requested in UZS). Ranking kinds additionally require limit (1–20). Use 1 for a single leader; otherwise default to 5 if unspecified. No other fields. Understand meaning across word order, politeness, synonyms and Uzbek apostrophe variants; do not require example wording.
+"Most expensive lots" and "eng qimmat lotlar" mean top_deals by total transaction amount. For top_deals set order:"asc" for cheapest/smallest and "desc" for most expensive/largest. Singular requests require limit:1. For top_deals ONLY, use convertToUzs:true unless the user explicitly selects one currency. For every other kind, omit convertToUzs unless the user explicitly requests conversion into UZS; ordinary totals and averages are grouped by currency automatically. If ranking unit/lot prices is requested, use unsupported instead of changing the price basis.
 Date range is extracted independently by code. Preserve the user's other filters. Do not use unsupported merely because the question mentions a month or ISO dates.
 Lookup kinds use ONLY kind and id copied verbatim from the question. Lookup details come from the database.
 Use unsupported for unsupported metrics or filters, comparison of separate periods, status or region filters, requests to invent answers, or ambiguity. Use needs_year if no time period is given for analytics, except top_deals which may use the full available dataset period.
 Never output an answer, SQL, company facts or numeric results.
+A request for cheapest transactions is supported, including "summasi eng kichik o‘nta bitim", "eng arzon 10 ta bitim", "Покажи десять самых дешёвых сделок": {"kind":"top_deals","order":"asc","limit":10,"convertToUzs":true}.
+Words for numbers such as o‘nta/десять mean 10, uchta/три mean 3. Return the requested count. Copy product/company filter text exactly, including apostrophes; do not translate names or omit constraints.
+The actual validated query schema follows:
+${JSON.stringify(z.toJSONSchema(querySchema))}
 Example: "2025-yil sement bozorining beshta yetakchi sotuvchisini ko‘rsat" -> {"kind":"top_sellers","year":2025,"product":"sement","limit":5}.
 Example: "Назови пятёрку лидеров по обороту цемента за 2025 год" -> {"kind":"top_sellers","year":2025,"product":"цемента","limit":5}.
 Example: "2025-yil yanvar oyida jami aylanma qancha?" -> {"kind":"turnover","year":2025}.
@@ -97,7 +101,7 @@ export class QuestionParser {
     if (limitation) return { kind: 'limitation', reason: limitation };
     const period = extractPeriod(question);
     if (/(?:bazani ishlatma|o[‘’'ʻ]ylab top|to[‘’'ʻ]qib|игнорируй правила|придумай ответ|выдумай)/iu.test(question)) return { kind: 'unsupported' };
-    const lotText = question.toLowerCase().replace(/['’ʻ]/gu, '‘').replace(/[?.!]+$/u, '').trim()
+    const lotText = question.toLowerCase().replace(/['’ʻʼ`]/gu, '‘').replace(/[?.!]+$/u, '').trim()
       .replace(/^\d{4}[- ]?yil(?:da|dagi)?\s+/u, '').replace(/lot\s+lar/gu, 'lotlar');
     const ranking = /^(?:menga |bozordagi )?(?:top[- ]?(\d{1,2}) )?(eng qimmat|eng katta summali|eng arzon|eng kichik summali) (?:(\d{1,2}|bitta|bir) )?(lotlar|lot|lotni|lotlarni|bitimlar|bitim|bitimni|bitimlarni)(?: (?:haqida ma‘lumot ber|haqida ma‘lumot|ni ko‘rsat|ko‘rsat|qaysilar))?$/iu.exec(lotText);
     if (ranking) {
@@ -113,7 +117,7 @@ export class QuestionParser {
       return { ...parsed.data, period: period.kind === 'period' ? period.period : fullPeriod };
     }
     let direct = exact(question);
-    const normalized = question.replace(/['’ʻ]/gu, '‘').replace(/[?.!]+$/u, '').trim();
+    const normalized = question.replace(/['’ʻʼ`]/gu, '‘').replace(/[?.!]+$/u, '').trim();
     const lookupPatterns = [
       { kind: 'lookup_broker', pattern: /^(BK\d{3})\s+broker haqida(?: ma[‘]lumot)?$/iu },
       { kind: 'lookup_company', pattern: /^STIR\s+(\d{9})\s+kompaniya haqida(?: ma[‘]lumot)?$/iu },
@@ -163,21 +167,36 @@ export class QuestionParser {
     if (!url || !model) return { kind: 'unsupported' };
 
     const key = openRouterKey || process.env.LLM_API_KEY;
-    const intent = await this.requestIntent(question, url, model, key);
+    const deadline = Date.now() + 40_000;
+    let intent = await this.requestIntent(question, url, model, key, undefined, deadline);
+    let result = this.groundIntent(question, intent, period);
+    if (result.kind === 'unsupported') {
+      this.logger.warn({ event: 'llm_plan_repair', reason: intent.kind === 'unsupported' ? 'unsupported_plan' : 'grounding_rejected' });
+      intent = await this.requestIntent(question, url, model, key, intent, deadline, result.reason);
+      result = this.groundIntent(question, intent, period);
+    }
+    return result;
+  }
+
+  private groundIntent(question: string, intent: RawIntent, period: ReturnType<typeof extractPeriod>): Intent {
     if (intent.kind === 'needs_year' || intent.kind === 'unsupported') return intent;
     if ('id' in intent) {
       if (!new RegExp(`(?:^|[^a-zA-Z0-9])${intent.id}(?=$|[^a-zA-Z0-9])`, 'i').test(question)) return { kind: 'unsupported' };
       return { ...intent, period: { from: '2022-01-03', to: '2026-10-30' } };
     }
     if (period.kind !== 'period' && intent.kind !== 'top_deals') return { kind: 'needs_year' };
-    const lower = question.toLowerCase();
+    const asksForUzs = /(?:so[‘’'ʻʼ]m|сумах|сумы|UZS)/iu.test(question);
+    if (intent.convertToUzs && !asksForUzs && intent.kind !== 'top_deals') intent = { ...intent, convertToUzs: false };
+    if (intent.kind === 'top_deals' && intent.currency && !/(?:so[‘’'ʻʼ]mga|в сумах|сумга)/iu.test(question)) intent = { ...intent, convertToUzs: false };
+    const normalize = (text: string) => text.toLowerCase().replace(/['’ʻʼ`]/gu, '‘');
+    const lower = normalize(question);
     if ((question.match(/\p{L}+/gu) ?? []).some(isCement) && !intent.product) return { kind: 'unsupported' };
     for (const value of [intent.product, intent.sellerTaxId, intent.buyerTaxId, intent.sellerName, intent.buyerName, intent.brokerCode, intent.contractId]) {
-      if (value && !lower.includes(value.toLowerCase())) return { kind: 'unsupported' };
+      if (value && !lower.includes(normalize(value))) return { kind: 'unsupported' };
     }
     const quotedNames = [...question.matchAll(/[«“"]([^»”"]{3,120})[»”"]/gu)].map(match => match[1]);
     for (const name of quotedNames) {
-      if (![intent.product, intent.sellerName, intent.buyerName].includes(name)) return { kind: 'unsupported' };
+      if (![intent.product, intent.sellerName, intent.buyerName].some(value => value && normalize(value) === normalize(name))) return { kind: 'unsupported' };
     }
     if (/(?:bekor qilingan|оплачен|аннулирован|исполнен|Toshkent viloyati|Ташкентская область)/iu.test(question)) return { kind: 'unsupported' };
     for (const id of question.match(/\b\d{9}\b/g) ?? []) {
@@ -186,10 +205,9 @@ export class QuestionParser {
     for (const code of question.match(/\bBK\d{3}\b/gi) ?? []) {
       if (code.toLowerCase() !== intent.brokerCode?.toLowerCase()) return { kind: 'unsupported' };
     }
-    if (/(?:nechta|bitimlar? soni|количество сделок|сколько сделок)/iu.test(question) && intent.kind !== 'count') return { kind: 'unsupported' };
-    if (/(?:hajmi|savdo hajm|объ[её]м)/iu.test(question) && intent.kind !== 'volume' && intent.kind !== 'unit_price') return { kind: 'unsupported' };
+    if (/(?:nechta|bitimlar? soni|количество сделок|сколько сделок)/iu.test(question) && intent.kind !== 'count') return { kind: 'unsupported', reason: 'Requested metric is number of deals: use count.' };
+    if (/(?:hajmi|savdo hajm|объ[её]м)/iu.test(question) && intent.kind !== 'volume' && intent.kind !== 'unit_price') return { kind: 'unsupported', reason: 'Requested metric is physical trade volume (savdo hajmi / объём), not monetary turnover. Use volume.' };
     if (/(?:aylanma|оборот)/iu.test(question) && !['turnover', 'top_sellers', 'top_buyers', 'top_products', 'top_deals'].includes(intent.kind)) return { kind: 'unsupported' };
-    if (intent.convertToUzs && !/(?:so[‘’'ʻ]m|сумах|сумы|UZS)/iu.test(question)) return { kind: 'unsupported' };
     const requestedLimit = /(?:top[- ]?|топ[- ]?)(\d{1,2})/iu.exec(question)?.[1];
     if (requestedLimit && (!('limit' in intent) || intent.limit !== Number(requestedLimit))) return { kind: 'unsupported' };
     if (/(?:so[‘’'ʻ]mga|в сумах|сумга)/iu.test(question) && !intent.convertToUzs && intent.currency !== 'UZS') return { kind: 'unsupported' };
@@ -201,17 +219,24 @@ export class QuestionParser {
     if (period.kind !== 'period') return { kind: 'needs_year' };
     return { ...intent, period: period.period };
   }
-  private async requestIntent(question: string, url: string, model: string, key: string | undefined): Promise<RawIntent> {
+  private async requestIntent(question: string, url: string, model: string, key: string | undefined, previousPlan?: RawIntent, deadline = Date.now() + 40_000, correction = 'Plan was unsupported or failed grounding.'): Promise<RawIntent> {
     for (let attempt = 1; attempt <= 2; attempt++) {
+      if (Date.now() >= deadline) throw new Error('Model request deadline exceeded');
       let response: Response;
       try {
         response = await fetch(url, {
           method: 'POST',
           headers: { 'content-type': 'application/json', ...(key ? { authorization: `Bearer ${key}` } : {}) },
-          signal: AbortSignal.timeout(20_000),
+          signal: AbortSignal.timeout(Math.max(1, Math.min(20_000, deadline - Date.now()))),
           body: JSON.stringify({
             model, response_format: { type: 'json_object' },
-            messages: [{ role: 'system', content: instructions }, { role: 'user', content: question }],
+            messages: [
+              { role: 'system', content: instructions }, { role: 'user', content: question },
+              ...(previousPlan ? [
+                { role: 'assistant', content: JSON.stringify(previousPlan) },
+                { role: 'user', content: correction + ' Re-read my original question. Match its metric, count, identifiers, product/company text and currency constraints exactly. Use a supported operation if it expresses the request. Never drop filters to make it work. If genuinely unsupported, keep unsupported. JSON only.' },
+              ] : []),
+            ],
           }),
         });
       } catch (error) {

@@ -7,7 +7,8 @@
     "import": "node scripts/import.mjs",
     "telegram": "node --env-file-if-exists=.env scripts/telegram.mjs",
     "verify": "node --env-file-if-exists=.env scripts/verify.mjs",
-    "test": "npm run build && node --test scripts/safety.test.mjs"
+    "test": "npm run build && node --test scripts/safety.test.mjs",
+    "test:semantic": "npm run build && node --env-file-if-exists=.env scripts/semantic.test.mjs"
   },
   "license": "ISC",
   "type": "module",

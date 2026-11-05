@@ -2,7 +2,7 @@ export type LimitationReason = 'exclusion' | 'unavailable_facts' | 'mixed_curren
 
 export function detectLimitation(question: string): LimitationReason | undefined {
   if (/https?:\/\//iu.test(question)) return 'external_link';
-  const text = question.toLowerCase().replace(/['’ʻ]/gu, '‘').replace(/[«“"]([^»”"]{1,120})[»”"]/gu, ' ');
+  const text = question.toLowerCase().replace(/['’ʻʼ`]/gu, '‘').replace(/[«“"]([^»”"]{1,120})[»”"]/gu, ' ');
   if (/(?:tashqari|исключая|исключить|кроме|excluding|except\b)/iu.test(text)) return 'exclusion';
   if (/(?:direktor|директор|rahbar|boshliq|руководител|начальник|bank hisob|банковск\p{L}*\s+сч[её]т|egasi|владел|telefon|телефон|прибыл|foyda|profit\b|ishonchli|над[её]жн)/iu.test(text)) return 'unavailable_facts';
   const currencyMentioned = /valyut|валют|usd|uzs|dollar|доллар/iu.test(text);
@@ -19,7 +19,7 @@ export function detectLimitation(question: string): LimitationReason | undefined
   }
   const geography = /(?:shahr|viloyat|област|регион)/iu.test(text) && /(?:bitim|сделк|aylanma|оборот)/iu.test(text);
   const status = /(?:bekor qilingan|оплачен|аннулирован|исполнен)/iu.test(text);
-  const threshold = /(?:summasi|сумм)[\s\S]*(?:katta|kichik|больше|меньше|свыше)/iu.test(text);
+  const threshold = /(?:summasi|сумм)[\s\S]*\d[\s\S]*(?:katta|kichik|больше|меньше|свыше)|(?:больше|меньше|свыше)\s+\d/iu.test(text);
   const overdue = /(?:yetkazib[\s\S]*(?:buzil|kechik)|просроч)/iu.test(text);
   if (geography || status || threshold || overdue) return 'unsupported_filter';
   if (/(?:bazani ishlatma|o‘ylab top|to‘qib|игнорируй правила|придумай|выдумай|biror kompaniya nomini yoz)/iu.test(text)) return 'invented_answer';

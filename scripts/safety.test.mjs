@@ -148,3 +148,54 @@ await test('singular and cheapest transaction requests preserve limit and direct
     assert.equal(result.order, order, question);
   }
 });
+
+await test('semantic rankings normalize currencies without requiring UZS wording', async () => {
+  await withModel([() => new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({kind:'top_deals',order:'asc',limit:10,convertToUzs:true}) } }] }))], async calls => {
+    const result = await new QuestionParser().parse('Покажи десять самых дешёвых сделок');
+    assert.equal(result.kind, 'top_deals');
+    assert.equal(result.limit, 10);
+    assert.equal(result.order, 'asc');
+    assert.equal(result.convertToUzs, true);
+    assert.equal(calls(), 1);
+  });
+});
+await test('rankings are not mistaken for numeric threshold filters', () => {
+  assert.equal(detectLimitation('Iltimos, summasi eng kichik o‘nta bitimni topib ber'), undefined);
+  assert.equal(detectLimitation('2025-yilda summasi 1 milliard so‘mdan katta bitimlar soni qancha?'), 'unsupported_filter');
+});
+await test('one semantic repair recovers an unsupported plan', async () => {
+  const reply = plan => () => new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(plan)}}]}));
+  await withModel([reply({kind:'unsupported'}),reply({kind:'top_deals',order:'asc',limit:10,convertToUzs:true})], async calls => {
+    const result = await new QuestionParser().parse('Eng arzon 10 ta bitimni koʼrsat');
+    assert.equal(result.kind, 'top_deals');
+    assert.equal(result.limit, 10);
+    assert.equal(calls(), 2);
+  });
+});
+await test('semantic repair never permits an invented company filter', async () => {
+  const bad = () => new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({kind:'turnover',year:2025,sellerName:'Invented Company'})}}]}));
+  await withModel([bad,bad], async calls => {
+    assert.equal((await new QuestionParser().parse('2025 yil sotuvchi aylanmasini top')).kind, 'unsupported');
+    assert.equal(calls(), 2);
+  });
+});
+await test('an unsolicited conversion does not reject totals or change a selected currency', async () => {
+  for (const [question, plan, expected] of [
+    ['Каков суммарный оборот за 2024 год?', {kind:'turnover',year:2024,convertToUzs:true}, 'turnover'],
+    ['Покажи три самых дешёвых сделки в USD за 2025 год', {kind:'top_deals',year:2025,currency:'USD',convertToUzs:true,order:'asc',limit:3}, 'top_deals'],
+  ]) {
+    await withModel([() => new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(plan)}}]}))], async () => {
+      const result = await new QuestionParser().parse(question);
+      assert.equal(result.kind, expected);
+      assert.equal(result.convertToUzs, false);
+    });
+  }
+});
+await test('metric correction repairs monetary turnover misread as physical volume', async () => {
+  const reply = kind => () => new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({kind,year:2025,product:'sement'})}}]}));
+  await withModel([reply('turnover'),reply('volume')], async calls => {
+    const result = await new QuestionParser().parse('2025 yil sement bo‘yicha jami savdo hajmini hisobla');
+    assert.equal(result.kind, 'volume');
+    assert.equal(calls(), 2);
+  });
+});
